@@ -1,8 +1,15 @@
+import { useState } from 'react'
 import { Check, Flame, Plus } from 'lucide-react'
 import type { CompletionLog, Habit } from '../types'
 import { isScheduledOn, todayKey } from '../lib/dates'
 import { calculateStreak, missedYesterday } from '../lib/streaks'
 import { owedPenaltyDates } from '../lib/debt'
+
+/** "2026-11-16" -> "Mon 16 Nov" */
+const formatDay = (key: string) =>
+  new Date(`${key}T00:00`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+
+const OWED_PREVIEW = 3
 
 interface TodayListProps {
   habits: Habit[]
@@ -16,31 +23,43 @@ interface TodayListProps {
 }
 
 export function TodayList({ habits, log, onToggle, onRepay, onPayPenalty, onAddHabit }: TodayListProps) {
+  const [showAllOwed, setShowAllOwed] = useState(false)
   const today = new Date()
   const key = todayKey()
   const scheduled = habits.filter((h) => isScheduledOn(h, today))
   const doneToday = log[key] ?? []
   const owed = habits.filter((h) => h.kind === 'build' && missedYesterday(h, log, today))
   const penalties = habits.flatMap((h) => owedPenaltyDates(h, log, today).map((date) => ({ habit: h, date })))
+  const visiblePenalties = showAllOwed ? penalties : penalties.slice(0, OWED_PREVIEW)
   const penaltySection = penalties.length > 0 && (
     <section className="px-5 pt-4 sm:px-8">
-      <h3 className="mb-2 font-mono text-xs uppercase tracking-wider text-rose">You owe</h3>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="font-mono text-xs uppercase tracking-wider text-rose">You owe</h3>
+        {penalties.length > OWED_PREVIEW && (
+          <button
+            onClick={() => setShowAllOwed(!showAllOwed)}
+            className="font-mono text-xs text-muted hover:text-paper"
+          >
+            {showAllOwed ? 'Show fewer' : `Show all ${penalties.length}`}
+          </button>
+        )}
+      </div>
       <ul className="flex flex-col gap-2">
-        {penalties.map(({ habit, date }) => (
+        {visiblePenalties.map(({ habit, date }) => (
           <li
             key={`${habit.id}:${date}`}
-            className="flex flex-col gap-2 rounded-xl border border-rose px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            className="flex items-center justify-between gap-3 rounded-lg border border-rose px-3 py-2"
           >
             <span className="font-body text-sm text-paper">
               {habit.consequence}
               <span className="block text-xs text-muted">
-                for {habit.kind === 'break' ? 'slipping on' : 'missing'} {habit.name} on {date}
+                {habit.kind === 'break' ? 'slipped on' : 'missed'} {habit.name} · {formatDay(date)}
                 {habit.witness && ` · witness: ${habit.witness}`}
               </span>
             </span>
             <button
               onClick={() => onPayPenalty(habit.id, date)}
-              className="self-start rounded-full bg-moss px-3 py-1 text-sm font-medium text-ink transition-colors hover:bg-moss-dim hover:text-paper sm:self-auto"
+              className="shrink-0 rounded-full bg-moss px-3 py-1 text-sm font-medium text-ink transition-colors hover:bg-moss-dim hover:text-paper"
             >
               I paid it
             </button>

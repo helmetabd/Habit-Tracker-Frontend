@@ -11,17 +11,34 @@ interface StatsPanelProps {
 export function StatsPanel({ habits, log }: StatsPanelProps) {
   if (habits.length === 0) return null
 
+  const buildIds = new Set(habits.filter((h) => h.kind === 'build').map((h) => h.id))
+  const breakIds = new Set(habits.filter((h) => h.kind === 'break').map((h) => h.id))
   const weekKeys = lastNDays(7)
   const chartData = weekKeys.map((key) => {
     const label = new Date(key).toLocaleDateString(undefined, { weekday: 'short' })
-    const completed = log[key]?.length ?? 0
-    return { label, completed }
+    const ids = log[key] ?? []
+    // Slips are their own series: a slip must never read as a completion.
+    return {
+      label,
+      completed: ids.filter((id) => buildIds.has(id)).length,
+      slipped: ids.filter((id) => breakIds.has(id)).length,
+    }
   })
 
   return (
     <div className="flex flex-col gap-6 px-5 py-4 sm:px-8">
       <div>
-        <h3 className="mb-3 font-mono text-xs uppercase tracking-wider text-muted">Last 7 days</h3>
+        <h3 className="mb-2 font-mono text-xs uppercase tracking-wider text-muted">Last 7 days</h3>
+        <p className="mb-3 flex gap-4 font-mono text-xs text-muted">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-moss" />
+            Done
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-rose" />
+            Slipped
+          </span>
+        </p>
         <div className="h-40 rounded-xl border border-hairline bg-surface p-3">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
@@ -44,7 +61,8 @@ export function StatsPanel({ habits, log }: StatsPanelProps) {
                   fontFamily: 'var(--font-body)',
                 }}
               />
-              <Bar dataKey="completed" fill="var(--color-moss)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="completed" stackId="day" fill="var(--color-moss)" />
+              <Bar dataKey="slipped" stackId="day" fill="var(--color-rose)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -66,10 +84,10 @@ export function StatsPanel({ habits, log }: StatsPanelProps) {
                   {habit.name}
                   {habit.identity && <span className="text-xs text-muted">· {habit.identity}</span>}
                 </span>
-                <span className="flex items-center gap-4 font-mono text-xs text-muted">
+                <span className="flex flex-wrap justify-end gap-x-3 gap-y-1 font-mono text-xs text-muted">
                   <span>streak {streak.current}</span>
                   <span>best {streak.best}</span>
-                  <span>{rate}% / 30d</span>
+                  <span>{habit.kind === 'break' ? `clean ${rate}%` : `${rate}%`} / 30d</span>
                 </span>
               </li>
             )
