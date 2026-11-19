@@ -6,10 +6,24 @@ import { calculateStreak, completionRate } from '../lib/streaks'
 interface StatsPanelProps {
   habits: Habit[]
   log: CompletionLog
+  onAddHabit: () => void
 }
 
-export function StatsPanel({ habits, log }: StatsPanelProps) {
-  if (habits.length === 0) return null
+export function StatsPanel({ habits, log, onAddHabit }: StatsPanelProps) {
+  if (habits.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 px-5 py-16 text-center">
+        <p className="font-display text-xl text-paper">No stats yet</p>
+        <p className="max-w-xs text-sm text-muted">Stats appear once you have a habit and a few days of logs.</p>
+        <button
+          onClick={onAddHabit}
+          className="mt-2 rounded-full bg-moss px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-moss-dim hover:text-paper"
+        >
+          Add a habit
+        </button>
+      </div>
+    )
+  }
 
   const buildIds = new Set(habits.filter((h) => h.kind === 'build').map((h) => h.id))
   const breakIds = new Set(habits.filter((h) => h.kind === 'break').map((h) => h.id))
@@ -45,7 +59,7 @@ export function StatsPanel({ habits, log }: StatsPanelProps) {
               <XAxis
                 dataKey="label"
                 stroke="var(--color-muted)"
-                fontSize={11}
+                fontSize={12}
                 fontFamily="var(--font-mono)"
                 tickLine={false}
                 axisLine={false}

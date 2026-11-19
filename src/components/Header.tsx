@@ -22,6 +22,7 @@ export function Header({ notificationsEnabled, onRequestNotifications, onLogout 
       <div className="mt-1 flex items-center gap-2">
         <button
           onClick={onRequestNotifications}
+          aria-label={notificationsEnabled ? 'Reminders on' : 'Enable reminders'}
           title={notificationsEnabled ? 'Reminders on' : 'Enable reminders'}
           className="rounded-full border border-hairline p-2 text-muted transition-colors hover:text-paper"
         >
@@ -29,6 +30,7 @@ export function Header({ notificationsEnabled, onRequestNotifications, onLogout 
         </button>
         <button
           onClick={onLogout}
+          aria-label="Log out"
           title="Log out"
           className="rounded-full border border-hairline p-2 text-muted transition-colors hover:text-paper"
         >

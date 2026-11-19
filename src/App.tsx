@@ -68,9 +68,10 @@ export default function App() {
             log={log}
             onToggleCell={toggleCompletion}
             onEditHabit={openEditHabitForm}
+            onAddHabit={openNewHabitForm}
           />
         )}
-        {tab === 'stats' && <StatsPanel habits={activeHabits} log={log} />}
+        {tab === 'stats' && <StatsPanel habits={activeHabits} log={log} onAddHabit={openNewHabitForm} />}
       </main>
 
       <TabBar active={tab} onChange={setTab} onAddHabit={openNewHabitForm} />

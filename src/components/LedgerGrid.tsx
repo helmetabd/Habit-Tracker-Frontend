@@ -6,13 +6,27 @@ interface LedgerGridProps {
   log: CompletionLog
   onToggleCell: (habitId: number, dateKey: string) => void
   onEditHabit: (habit: Habit) => void
+  onAddHabit: () => void
   days?: number
 }
 
-export function LedgerGrid({ habits, log, onToggleCell, onEditHabit, days = 28 }: LedgerGridProps) {
+export function LedgerGrid({ habits, log, onToggleCell, onEditHabit, onAddHabit, days = 28 }: LedgerGridProps) {
   const dateKeys = lastNDays(days)
 
-  if (habits.length === 0) return null
+  if (habits.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 px-5 py-16 text-center">
+        <p className="font-display text-xl text-paper">Nothing to track yet</p>
+        <p className="max-w-xs text-sm text-muted">Add a habit to see its last 28 days here.</p>
+        <button
+          onClick={onAddHabit}
+          className="mt-2 rounded-full bg-moss px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-moss-dim hover:text-paper"
+        >
+          Add a habit
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="overflow-x-auto px-5 py-4 sm:px-8">
@@ -23,7 +37,7 @@ export function LedgerGrid({ habits, log, onToggleCell, onEditHabit, days = 28 }
             const day = Number(key.slice(-2))
             const isMonday = new Date(key).getDay() === 1
             return (
-              <div key={key} className="flex justify-center font-mono text-[9px] text-muted">
+              <div key={key} className="flex justify-center font-mono text-xs text-muted">
                 {isMonday ? day : ''}
               </div>
             )
