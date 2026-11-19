@@ -9,13 +9,14 @@ import { AuthScreen } from './components/AuthScreen'
 import { useAuth } from './hooks/useAuth'
 import { useHabits } from './hooks/useHabits'
 import { ensureNotificationPermission } from './lib/notifications'
-import { todayKey } from './lib/dates'
+import { todayKey, yesterdayKey } from './lib/dates'
 import type { Habit } from './types'
 
 export default function App() {
   const { user, loading: authLoading, login, register, logout } = useAuth()
   const onUnauthorized = useCallback(() => logout(), [logout])
-  const { activeHabits, log, addHabit, updateHabit, deleteHabit, toggleCompletion } = useHabits(onUnauthorized)
+  const { activeHabits, log, addHabit, updateHabit, deleteHabit, toggleCompletion, togglePenalty } =
+    useHabits(onUnauthorized)
 
   const [tab, setTab] = useState<Tab>('today')
   const [formOpen, setFormOpen] = useState(false)
@@ -56,6 +57,8 @@ export default function App() {
             habits={activeHabits}
             log={log}
             onToggle={(habitId) => toggleCompletion(habitId, todayKey())}
+            onRepay={(habitId) => toggleCompletion(habitId, yesterdayKey())}
+            onPayPenalty={togglePenalty}
             onAddHabit={openNewHabitForm}
           />
         )}

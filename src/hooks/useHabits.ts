@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { CompletionLog, Habit, Weekday } from '../types'
+import type { CompletionLog, Habit, HabitKind, Weekday } from '../types'
 import { api, ApiError } from '../lib/api'
 import { todayKey } from '../lib/dates'
 import { notify } from '../lib/notifications'
@@ -11,6 +11,11 @@ export interface NewHabitInput {
   reminderTime: string | null
   identity: string | null
   stackAfterHabitId: number | null
+  kind: HabitKind
+  cue: string | null
+  replacement: string | null
+  consequence: string | null
+  witness: string | null
 }
 
 /** Wire shape returned by the Laravel API (snake_case, nested completions). */
@@ -24,8 +29,14 @@ interface ApiHabit {
   created_at: string
   identity: string | null
   stack_after_habit_id: number | null
+  kind: HabitKind
+  cue: string | null
+  replacement: string | null
+  consequence: string | null
+  witness: string | null
   stack_after?: { id: number; name: string } | null
   completions?: { date: string }[]
+  penalties?: { missed_on: string }[]
 }
 
 function fromApi(habit: ApiHabit): Habit {
@@ -40,6 +51,12 @@ function fromApi(habit: ApiHabit): Habit {
     identity: habit.identity,
     stackAfterHabitId: habit.stack_after_habit_id,
     stackAfterHabitName: habit.stack_after?.name ?? null,
+    kind: habit.kind,
+    cue: habit.cue,
+    replacement: habit.replacement,
+    consequence: habit.consequence,
+    witness: habit.witness,
+    paidPenaltyDates: (habit.penalties ?? []).map((p) => p.missed_on),
   }
 }
 
@@ -51,6 +68,11 @@ function toApi(input: Partial<NewHabitInput>) {
     ...(input.reminderTime !== undefined && { reminder_time: input.reminderTime }),
     ...(input.identity !== undefined && { identity: input.identity?.trim() || null }),
     ...(input.stackAfterHabitId !== undefined && { stack_after_habit_id: input.stackAfterHabitId }),
+    ...(input.kind !== undefined && { kind: input.kind }),
+    ...(input.cue !== undefined && { cue: input.cue }),
+    ...(input.replacement !== undefined && { replacement: input.replacement }),
+    ...(input.consequence !== undefined && { consequence: input.consequence }),
+    ...(input.witness !== undefined && { witness: input.witness }),
   }
 }
 
@@ -187,7 +209,32 @@ export function useHabits(onUnauthorized: () => void) {
     [log, handleError],
   )
 
+  const togglePenalty = useCallback(
+    async (habitId: number, dateKey: string) => {
+      const previous = habits
+      setHabits((prev) =>
+        prev.map((h) => {
+          if (h.id !== habitId) return h
+          const paid = h.paidPenaltyDates.includes(dateKey)
+          return {
+            ...h,
+            paidPenaltyDates: paid
+              ? h.paidPenaltyDates.filter((d) => d !== dateKey)
+              : [...h.paidPenaltyDates, dateKey],
+          }
+        }),
+      )
+      try {
+        await api.post(`/habits/${habitId}/penalties/toggle`, { date: dateKey })
+      } catch (err) {
+        setHabits(previous)
+        handleError(err)
+      }
+    },
+    [habits, handleError],
+  )
+
   const activeHabits = habits.filter((h) => !h.archived)
 
-  return { habits, activeHabits, log, loading, addHabit, updateHabit, deleteHabit, toggleCompletion }
+  return { habits, activeHabits, log, loading, addHabit, updateHabit, deleteHabit, toggleCompletion, togglePenalty }
 }

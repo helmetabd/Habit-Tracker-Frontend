@@ -12,6 +12,10 @@ export function todayKey(): string {
   return toDateKey(new Date())
 }
 
+export function yesterdayKey(): string {
+  return toDateKey(addDays(new Date(), -1))
+}
+
 export function addDays(date: Date, delta: number): Date {
   const next = new Date(date)
   next.setDate(next.getDate() + delta)

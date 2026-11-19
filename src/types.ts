@@ -14,7 +14,20 @@ export interface Habit {
   /** Habit stacking: "After I [stackAfterHabitId], I will [this habit]." */
   stackAfterHabitId: number | null
   stackAfterHabitName: string | null
+  /** "build" = do it. "break" = avoid it; a logged day is a slip. */
+  kind: HabitKind
+  /** Break habits: what triggers the urge. */
+  cue: string | null
+  /** Break habits: what to do instead (replace, don't just delete). */
+  replacement: string | null
+  /** Habit contract: what you owe if you miss (or slip). */
+  consequence: string | null
+  witness: string | null
+  /** Dates ("YYYY-MM-DD") whose penalty is already paid. */
+  paidPenaltyDates: string[]
 }
+
+export type HabitKind = 'build' | 'break'
 
 export interface User {
   id: number

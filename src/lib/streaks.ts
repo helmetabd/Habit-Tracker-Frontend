@@ -1,6 +1,12 @@
 import type { CompletionLog, Habit, HabitStreak } from '../types'
 import { addDays, isScheduledOn, toDateKey } from './dates'
 
+/** Break habits are "done" on days they weren't logged, since a logged day is a slip. */
+function isDone(habit: Habit, log: CompletionLog, key: string): boolean {
+  const logged = log[key]?.includes(habit.id) ?? false
+  return habit.kind === 'break' ? !logged : logged
+}
+
 /**
  * Walks backward from today over the habit's scheduled days only, so rest
  * days never break a streak. A not-yet-done "today" doesn't break it either
@@ -13,6 +19,7 @@ export function calculateStreak(
   lookbackDays = 365,
 ): HabitStreak {
   const todayKey = toDateKey(today)
+  const createdKey = toDateKey(new Date(habit.createdAt))
   let current = 0
   let best = 0
   let running = 0
@@ -23,7 +30,8 @@ export function calculateStreak(
     if (!isScheduledOn(habit, date)) continue
 
     const key = toDateKey(date)
-    const done = log[key]?.includes(habit.id) ?? false
+    if (key < createdKey) break // don't count days before the habit existed
+    const done = isDone(habit, log, key)
 
     if (done) {
       running += 1
@@ -31,7 +39,8 @@ export function calculateStreak(
       if (stillCounting) current = running
     } else {
       running = 0
-      if (key !== todayKey) stillCounting = false
+      // A slip (break habit) always ends the streak, even today.
+      if (key !== todayKey || habit.kind === 'break') stillCounting = false
     }
   }
 
@@ -44,9 +53,11 @@ export function calculateStreak(
  * miss worth a gentle nudge, distinct from a fully broken chain.
  */
 export function missedYesterday(habit: Habit, log: CompletionLog, today: Date = new Date()): boolean {
+  if (habit.kind === 'break') return false
   const yesterday = addDays(today, -1)
   if (!isScheduledOn(habit, yesterday)) return false
   const key = toDateKey(yesterday)
+  if (toDateKey(new Date(habit.createdAt)) > key) return false // no debt for days before it existed
   return !(log[key]?.includes(habit.id) ?? false)
 }
 
@@ -56,6 +67,6 @@ export function completionRate(habit: Habit, log: CompletionLog, dateKeys: strin
     return isScheduledOn(habit, new Date(y, m - 1, d))
   })
   if (scheduled.length === 0) return 0
-  const done = scheduled.filter((key) => log[key]?.includes(habit.id)).length
+  const done = scheduled.filter((key) => isDone(habit, log, key)).length
   return done / scheduled.length
 }

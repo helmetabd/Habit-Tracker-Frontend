@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
-import type { Habit, Weekday } from '../types'
+import type { Habit, HabitKind, Weekday } from '../types'
 import { WEEKDAY_LABELS } from '../lib/dates'
 import type { NewHabitInput } from '../hooks/useHabits'
 
@@ -25,6 +25,12 @@ export function HabitForm({ initial, stackableHabits, onSave, onDelete, onClose 
   const [stackAfterHabitId, setStackAfterHabitId] = useState<number | null>(
     initial?.stackAfterHabitId ?? null,
   )
+  const [kind, setKind] = useState<HabitKind>(initial?.kind ?? 'build')
+  const [cue, setCue] = useState(initial?.cue ?? '')
+  const [replacement, setReplacement] = useState(initial?.replacement ?? '')
+  const [consequence, setConsequence] = useState(initial?.consequence ?? '')
+  const [witness, setWitness] = useState(initial?.witness ?? '')
+  const isBreak = kind === 'break'
 
   const toggleDay = (day: Weekday) => {
     setActiveDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
@@ -36,10 +42,16 @@ export function HabitForm({ initial, stackableHabits, onSave, onDelete, onClose 
     onSave({
       name,
       color,
-      activeDays,
       reminderTime: reminderTime || null,
       identity: identity.trim() || null,
-      stackAfterHabitId,
+      // Break habits are every day and never stacked: they're about avoiding, not scheduling.
+      activeDays: isBreak ? [] : activeDays,
+      stackAfterHabitId: isBreak ? null : stackAfterHabitId,
+      kind,
+      cue: isBreak ? cue.trim() || null : null,
+      replacement: isBreak ? replacement.trim() || null : null,
+      consequence: consequence.trim() || null,
+      witness: witness.trim() || null,
     })
     onClose()
   }
@@ -55,6 +67,22 @@ export function HabitForm({ initial, stackableHabits, onSave, onDelete, onClose 
           <button type="button" onClick={onClose} className="text-muted hover:text-paper">
             <X size={20} />
           </button>
+        </div>
+
+        <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">Type</label>
+        <div className="mb-4 flex gap-2">
+          {(['build', 'break'] as const).map((k) => (
+            <button
+              type="button"
+              key={k}
+              onClick={() => setKind(k)}
+              className={`flex-1 rounded-full border border-hairline py-1.5 text-sm transition-colors ${
+                kind === k ? 'bg-moss text-ink' : 'text-muted hover:text-paper'
+              }`}
+            >
+              {k === 'build' ? 'Build (do it)' : 'Break (avoid it)'}
+            </button>
+          ))}
         </div>
 
         <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">Name</label>
@@ -76,6 +104,29 @@ export function HabitForm({ initial, stackableHabits, onSave, onDelete, onClose 
           className="mb-4 w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-paper placeholder:text-muted focus:border-muted focus:outline-none"
         />
 
+        {isBreak && (
+          <>
+            <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">
+              Cue <span className="normal-case text-muted/70">(optional)</span>
+            </label>
+            <input
+              value={cue}
+              onChange={(e) => setCue(e.target.value)}
+              placeholder="lying down to sleep"
+              className="mb-4 w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-paper placeholder:text-muted focus:border-muted focus:outline-none"
+            />
+            <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">
+              Instead <span className="normal-case text-muted/70">(optional)</span>
+            </label>
+            <input
+              value={replacement}
+              onChange={(e) => setReplacement(e.target.value)}
+              placeholder="read two pages"
+              className="mb-4 w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-paper placeholder:text-muted focus:border-muted focus:outline-none"
+            />
+          </>
+        )}
+
         <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">Color</label>
         <div className="mb-4 flex gap-2">
           {COLORS.map((c) => (
@@ -89,6 +140,8 @@ export function HabitForm({ initial, stackableHabits, onSave, onDelete, onClose 
           ))}
         </div>
 
+        {!isBreak && (
+          <>
         <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">
           Days (empty = every day)
         </label>
@@ -110,7 +163,10 @@ export function HabitForm({ initial, stackableHabits, onSave, onDelete, onClose 
           ))}
         </div>
 
-        {stackableHabits.length > 0 && (
+          </>
+        )}
+
+        {!isBreak && stackableHabits.length > 0 && (
           <>
             <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">
               Stack after <span className="normal-case text-muted/70">(optional)</span>
@@ -129,6 +185,26 @@ export function HabitForm({ initial, stackableHabits, onSave, onDelete, onClose 
             </select>
           </>
         )}
+
+        <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">
+          If I miss it, I will… <span className="normal-case text-muted/70">(optional contract)</span>
+        </label>
+        <input
+          value={consequence}
+          onChange={(e) => setConsequence(e.target.value)}
+          placeholder="no phone tonight"
+          className="mb-4 w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-paper placeholder:text-muted focus:border-muted focus:outline-none"
+        />
+
+        <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">
+          Witness <span className="normal-case text-muted/70">(optional)</span>
+        </label>
+        <input
+          value={witness}
+          onChange={(e) => setWitness(e.target.value)}
+          placeholder="my sister"
+          className="mb-4 w-full rounded-lg border border-hairline bg-ink px-3 py-2 text-paper placeholder:text-muted focus:border-muted focus:outline-none"
+        />
 
         <label className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted">
           Reminder (optional)

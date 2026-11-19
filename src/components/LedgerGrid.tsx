@@ -1,5 +1,5 @@
 import type { CompletionLog, Habit } from '../types'
-import { isScheduledOn, lastNDays } from '../lib/dates'
+import { isScheduledOn, lastNDays, yesterdayKey } from '../lib/dates'
 
 interface LedgerGridProps {
   habits: Habit[]
@@ -67,8 +67,10 @@ function RowFragment({
     const scheduled = isScheduledOn(habit, date)
     const done = log[key]?.includes(habit.id) ?? false
 
-    if (scheduled) runningMiss = done ? 0 : runningMiss + 1
-    return { key, scheduled, done, broken: runningMiss >= 2 }
+    // For break habits a logged day is the failure (a slip), so the meaning flips.
+    const failed = habit.kind === 'break' ? done : !done
+    if (scheduled) runningMiss = failed ? runningMiss + 1 : 0
+    return { key, scheduled, done, broken: habit.kind === 'build' && runningMiss >= 2 }
   })
 
   return (
@@ -83,11 +85,13 @@ function RowFragment({
       {cells.map(({ key, scheduled, done, broken }) => (
         <button
           key={key}
-          disabled={!scheduled}
+          disabled={!scheduled || key < yesterdayKey()}
           onClick={() => onToggleCell(habit.id, key)}
           className="mx-auto h-3 w-3 rounded-[3px] transition-colors disabled:cursor-default"
           style={{
-            backgroundColor: done ? habit.color : scheduled ? 'var(--color-surface-raised)' : 'transparent',
+            backgroundColor: done
+              ? habit.kind === 'break' ? 'var(--color-rose)' : habit.color
+              : scheduled ? 'var(--color-surface-raised)' : 'transparent',
             border: !scheduled ? 'none' : broken ? '1px solid var(--color-rose)' : '1px solid var(--color-hairline)',
           }}
         />
