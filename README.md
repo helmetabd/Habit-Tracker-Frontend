@@ -1,4 +1,4 @@
-# Ledger — a habit tracker PWA
+# Habit Tracker — a habit tracker PWA
 
 A small, installable habit tracker. Everything is stored locally in your
 browser (`localStorage`) — no account, no server.

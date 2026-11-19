@@ -17,7 +17,7 @@ export function Header({ notificationsEnabled, onRequestNotifications, onLogout 
     <header className="flex items-start justify-between border-b border-hairline px-5 py-6 sm:px-8">
       <div>
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">{TODAY_LABEL}</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold text-paper">Ledger</h1>
+        <h1 className="mt-1 font-display text-3xl font-semibold text-paper">Habit Tracker</h1>
       </div>
       <div className="mt-1 flex items-center gap-2">
         <button

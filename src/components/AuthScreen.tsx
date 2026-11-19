@@ -31,7 +31,7 @@ export function AuthScreen({ onLogin, onRegister }: AuthScreenProps) {
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <form onSubmit={handleSubmit} className="w-full max-w-sm">
-        <h1 className="mb-1 font-display text-3xl font-semibold text-paper">Ledger</h1>
+        <h1 className="mb-1 font-display text-3xl font-semibold text-paper">Habit Tracker</h1>
         <p className="mb-6 text-sm text-muted">
           {mode === 'login' ? 'Welcome back.' : 'Create an account to start tracking.'}
         </p>

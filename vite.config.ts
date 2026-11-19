@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Ledger — Habit Tracker',
-        short_name: 'Ledger',
+        name: 'Habit Tracker',
+        short_name: 'Habit Tracker',
         description: 'Plan, track and keep your habits.',
         theme_color: '#1c1b1a',
         background_color: '#1c1b1a',

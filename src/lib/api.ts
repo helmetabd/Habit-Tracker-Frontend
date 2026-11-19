@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
-const TOKEN_KEY = 'ledger:token'
+const TOKEN_KEY = 'habit-tracker:token'
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
